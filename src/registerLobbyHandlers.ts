@@ -1,8 +1,10 @@
-import { MySocket, MyServer } from "./socketTypes";
+import { MySocket, MyServer } from "./types/socketTypes";
 import { v4 as uuidv4 } from 'uuid';
-import LobbyContainer from "./LobbyContainer";
+import LobbyContainer from "./types/LobbyContainer";
 
-export function registerLobbyHandlers(socket: MySocket, io: MyServer, lobbies: LobbyContainer) {
+const lobbies: LobbyContainer = {};
+
+export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
 
     const handleCreateLobby = () => {
         if (socket.data.lobbyId != null) return;

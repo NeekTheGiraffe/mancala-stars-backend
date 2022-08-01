@@ -1,32 +1,37 @@
 import express from "express";
 import { createServer } from "http";
-import { Server } from "socket.io";
-import { ServerToClientEvents, ClientToServerEvents, InterServerEvents, SocketData, MySocket } from './socketTypes';
+import { Server, Socket } from "socket.io";
+import { ServerToClientEvents, ClientToServerEvents, InterServerEvents, SocketData, MySocket } from './types/socketTypes';
 import { registerLobbyHandlers } from './registerLobbyHandlers';
-import LobbyContainer from "./LobbyContainer";
 
 const app = express();
 const httpServer = createServer(app);
-export const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
+const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
     (httpServer, { cors: { origin: "*" }});
-
-const lobbies: LobbyContainer = {};
 
 io.on("connection", socket => {
     console.log(`Connection established with ${socket.id}`);
     
-    socket.on('requestId', () => socket.emit('yourId', socket.id));
+    socket.on('requestId', handleRequestId);
     socket.on('sendMessage', handleMessage);
-    socket.on('disconnect', () => console.log(`User ${socket.id} disconnected!`));
-    registerLobbyHandlers(socket, io, lobbies);
+    socket.on('disconnect', handleDisconnect);
+    registerLobbyHandlers(socket, io);
 });
 
-
+function handleRequestId() {
+    const socket: MySocket = this;
+    socket.emit('yourId', socket.id);
+}
 
 function handleMessage(message: string) {
     const socket: MySocket = this;
     console.log(`${socket.id}: ${message}`);
     io.emit('sendMessage', message);
+}
+
+function handleDisconnect() {
+    const socket: MySocket = this;
+    console.log(`User ${socket.id} disconnected!`);
 }
 
 const port = process.env.PORT || 5000;
