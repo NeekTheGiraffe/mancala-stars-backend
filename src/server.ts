@@ -1,8 +1,8 @@
 import express from "express";
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
-import { ServerToClientEvents, ClientToServerEvents, InterServerEvents, SocketData, MySocket } from './types/socketTypes';
-import { registerLobbyHandlers } from './registerLobbyHandlers';
+import { ServerToClientEvents, ClientToServerEvents, InterServerEvents, SocketData, MySocket } from 'types/socketTypes';
+import { registerLobbyHandlers } from './eventHandlers';
 
 const app = express();
 const httpServer = createServer(app);

@@ -1,19 +1,23 @@
-import Lobby from "./Lobby";
+import Lobby from "lobby";
 import { Server, Socket } from 'socket.io';
 
 export interface ServerToClientEvents {
     "sendMessage": (m: string) => void;
-    "createLobby:success": (lobby: Lobby) => void;
-    "joinLobby:success": (lobby: Lobby) => void;
-    "leaveLobby:success": () => void;
-    "lobbyUpdate": (lobby: Lobby) => void;
+
+    "lobby:create:success": (lobby: Lobby) => void;
+    "lobby:join:success": (lobby: Lobby) => void;
+    "lobby:leave:success": () => void;
+    "lobby:update": (lobby: Lobby) => void;
+
     "yourId": (socketId: string) => void;
 }
 export interface ClientToServerEvents {
     "sendMessage": (m: string) => void;
-    "createLobby": () => void;
-    "joinLobby": (lobbyId: string) => void;
-    "leaveLobby": () => void;
+
+    "lobby:create": () => void;
+    "lobby:join": (lobbyId: string) => void;
+    "lobby:leave": () => void;
+
     "requestId": () => void;
     "startGame": () => void;
 }
