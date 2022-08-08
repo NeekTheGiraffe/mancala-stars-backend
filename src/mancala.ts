@@ -29,10 +29,13 @@ export namespace Mancala {
     export function makeMove(board: Board, startingPit: number): Board {
         const { stores, pits, whoseTurn } = board;
 
+        // TODO : Implement the special rule if the last pit is empty and on your side
         const numSeeds = pits[startingPit];
-        const newStoreValue = (oldValue: number, newPit: number): number => {
-            // TODO
-            return 0;
+        const newStoreValue = (oldValue: number, store: number): number => {
+            if (store !== whoseTurn)
+                return oldValue;
+            const pos = startingPit % (NUM_PITS / 2);
+            return oldValue + Math.floor(((pos + numSeeds) + NUM_PITS + 1 - (NUM_PITS / 2)) / (NUM_PITS + 1));
         };
         const newPitValue = (oldValue: number, newPit: number): number => {
             
@@ -42,8 +45,8 @@ export namespace Mancala {
             return baseValue + Math.floor((numSeeds - spacesAway) / (NUM_PITS + 1)) + 1;
         };
         const mayTakeAnotherTurn = (): boolean => {
-            // TODO
-            return false;
+            const pos = startingPit % (NUM_PITS / 2);
+            return (pos + numSeeds) % (NUM_PITS + 1) === NUM_PITS / 2;
         };
     
         return {
@@ -66,9 +69,10 @@ export namespace Mancala {
      */
     export function validateMove(board: Board, pit: number): boolean {
         if (!Number.isInteger(pit)) return false;
-        const { whoseTurn } = board;
+        const { whoseTurn, pits } = board;
+        if (pits[pit] === 0) return false;
         if (whoseTurn === 0) return pit < NUM_PITS / 2 && pit >= 0;
-        else return pit < NUM_PITS && pit >= NUM_PITS / 2;
+        return pit < NUM_PITS && pit >= NUM_PITS / 2;
     }
 
     function numSpacesAway(pit1: number, pit2: number): number {

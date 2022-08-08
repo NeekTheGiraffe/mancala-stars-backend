@@ -1,4 +1,5 @@
 import Lobby from "lobby";
+import Game from "game";
 import { Server, Socket } from 'socket.io';
 
 export interface ServerToClientEvents {
@@ -9,6 +10,10 @@ export interface ServerToClientEvents {
     "lobby:leave:success": () => void;
     "lobby:update": (lobby: Lobby) => void;
 
+    "game:start": (game: Game) => void;
+    "game:update": (game: Game, isGameOver: boolean) => void;
+    "game:end": () => void;
+
     "yourId": (socketId: string) => void;
 }
 export interface ClientToServerEvents {
@@ -18,8 +23,10 @@ export interface ClientToServerEvents {
     "lobby:join": (lobbyId: string) => void;
     "lobby:leave": () => void;
 
+    "game:start": () => void;
+    "game:makeMove": (pit: number) => void;
+
     "requestId": () => void;
-    "startGame": () => void;
 }
 export interface InterServerEvents {}
 export interface SocketData {

@@ -22,9 +22,7 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
         socket.emit("lobby:create:success", lobby);
     };
     const handleJoinLobby = (lobbyId: string) => {
-        // if (socket.data.lobbyId != null) return; // Socket cannot join more than 1 lobby
-        // if (lobbies[lobbyId] == null) return; // Lobby doesn't exist
-        // if (lobbies[lobbyId].size >= lobbies[lobbyId].capacity) return; // Lobby is full
+
         console.log(`${socket.id}: wants to join a Lobby`);
         
         if (!validate(socket, { lobby: { isNotAnyMember: true, exists: lobbyId, isNotFull: true }})) return;
@@ -61,7 +59,9 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
         // If a game exists, delete the game because it's not valid anymore
         if (games[lobbyId] == null) return;
         delete games[lobbyId];
-        // TODO: Broadcast that the game is destroyed
+
+        // Broadcast that the game is destroyed
+        io.to(lobbyId).emit('game:end');
     };
     const handleStartGame = () => {
     
@@ -69,12 +69,12 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
             lobby: { exists: true, isLeader: true, isFull: true },
             game: { doesNotExist: true }
         })) return;
-
-        //console.log(`Lobby ${socket.data.lobbyId} validated to start game`);
     
         const { lobbyId } = socket.data;
         games[lobbyId] = createGame(lobbies[lobbyId]);
-        // Broadcast the result : TODO
+
+        // Broadcast the result
+        io.to(lobbyId).emit('game:start', games[lobbyId]);
     };
     const handleMakeMove = (pit: number) => {
 
@@ -84,22 +84,24 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
         })) return;
 
         // Make the move
-        const game = games[socket.data.lobbyId];
+        const { lobbyId } = socket.data;
+        const game = games[lobbyId];
         game.board = Mancala.makeMove(game.board, pit);
-        // Broadcast the result : TODO
-    };
-    const handleEndGame = () => {
 
-    };
-    const handleRestartGame = () => {
+        console.log(game.board);
 
+        // Broadcast the result
+        io.to(lobbyId).emit('game:update', game, Mancala.isGameOver(game.board));
     };
 
     socket.on('lobby:create', handleCreateLobby);
     socket.on('lobby:join', handleJoinLobby);
     socket.on('lobby:leave', handleLeaveLobby);
+    
+    socket.on('game:start', handleStartGame);
+    socket.on('game:makeMove', handleMakeMove);
+    
     socket.on('disconnect', handleDisconnect);
-    socket.on('startGame', handleStartGame);
 }
 
 function validate(socket: MySocket, flags: {
