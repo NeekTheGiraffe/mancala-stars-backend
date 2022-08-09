@@ -1,6 +1,7 @@
 import Lobby from "lobby";
 import Game from "game";
 import { Server, Socket } from 'socket.io';
+import { Mancala } from "mancala";
 
 export interface ServerToClientEvents {
     "sendMessage": (m: string) => void;
@@ -14,6 +15,9 @@ export interface ServerToClientEvents {
     "game:update": (game: Game, isGameOver: boolean) => void;
     "game:end": () => void;
 
+    "game:solo:start": (board: Mancala.Board) => void;
+    "game:solo:update": (board: Mancala.Board, isGameOver: boolean) => void;
+
     "yourId": (socketId: string) => void;
 }
 export interface ClientToServerEvents {
@@ -26,11 +30,15 @@ export interface ClientToServerEvents {
     "game:start": () => void;
     "game:makeMove": (pit: number) => void;
 
+    "game:solo:start": () => void;
+    "game:solo:makeMove": (pit: number) => void;
+
     "requestId": () => void;
 }
 export interface InterServerEvents {}
 export interface SocketData {
     lobbyId: string;
+    soloGame?: Mancala.Board;
 }
 export type MyServer = Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
 export type MySocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;

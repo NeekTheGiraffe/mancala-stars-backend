@@ -29,45 +29,83 @@ export namespace Mancala {
     export function makeMove(board: Board, startingPit: number): Board {
         const { stores, pits, whoseTurn } = board;
 
-        // TODO : Implement the special rule if the last pit is empty and on your side
+        // TODO: All seeds get collected if the game is over
         const numSeeds = pits[startingPit];
-        const newStoreValue = (oldValue: number, store: number): number => {
-            if (store !== whoseTurn)
-                return oldValue;
-            const pos = startingPit % (NUM_PITS / 2);
-            return oldValue + Math.floor(((pos + numSeeds) + NUM_PITS + 1 - (NUM_PITS / 2)) / (NUM_PITS + 1));
-        };
-        const newPitValue = (oldValue: number, newPit: number): number => {
-            
+        const startPos = startingPit % (NUM_PITS / 2); // 0-5 relative to the player
+        const endDistance = startPos + numSeeds;
+        const endingPit = getEndingPit(endDistance);
+        
+        const stealFrom = NUM_PITS - 1 - endingPit;
+        const steal = endingPit !== -1 && sideOf(endingPit) === whoseTurn &&
+            (pits[endingPit] === 0 || startingPit === endingPit) &&
+            pits[stealFrom] !== 0;
+        const mayTakeAnotherTurn = endingPit === -1;
+
+        //console.log({ endingPit, steal, stealFrom });
+        
+        const pitValueBeforeStealing = (oldValue: number, newPit: number): number => {
             const baseValue = (newPit === startingPit) ? 0 : oldValue;
             const spacesAway = numSpacesAway(startingPit, newPit);
     
             return baseValue + Math.floor((numSeeds - spacesAway) / (NUM_PITS + 1)) + 1;
         };
-        const mayTakeAnotherTurn = (): boolean => {
-            const pos = startingPit % (NUM_PITS / 2);
-            return (pos + numSeeds) % (NUM_PITS + 1) === NUM_PITS / 2;
+        const newStoreValue = (oldValue: number, store: number): number => {
+            if (store !== whoseTurn)
+                return oldValue;
+            const fromStealing = steal ?
+                pitValueBeforeStealing(pits[endingPit], endingPit) + pitValueBeforeStealing(pits[stealFrom], stealFrom) :
+                0;
+            const fromPassing = Math.floor((endDistance - (NUM_PITS / 2)) / (NUM_PITS + 1)) + 1
+            return oldValue + fromStealing + fromPassing;
         };
+        const newPitValue = (oldValue: number, newPit: number): number => {
+            if (steal && (newPit === endingPit || newPit === stealFrom)) return 0;
+            return pitValueBeforeStealing(oldValue, newPit);
+        }
     
         return {
             stores: stores.map(newStoreValue),
             pits: pits.map(newPitValue),
-            whoseTurn: mayTakeAnotherTurn() ? whoseTurn : (whoseTurn + 1) % 2
+            whoseTurn: mayTakeAnotherTurn ? whoseTurn : (whoseTurn + 1) % 2
         };
+
+        /** Returns the pit index where we landed. If we landed on the player's
+         * store, return -1.
+         */
+        function getEndingPit(endDistance: number) {
+            const endPos = endDistance % (NUM_PITS + 1);
+            if (endPos === NUM_PITS / 2)
+                return -1;
+            const adjusted = (endPos > NUM_PITS / 2) ? endPos - 1 : endPos;
+            return (sideOf(startingPit) === 1) ? (adjusted + NUM_PITS / 2) % NUM_PITS : adjusted;
+        }
     }
 
-    export function isGameOver(board: Board): boolean {
+    export function makeRandomMove(board: Board): Board {
         const { pits, whoseTurn } = board;
-        // Determine the search range
-        const [start, end] = whoseTurn === 0 ? [0, NUM_PITS / 2] : [NUM_PITS / 2, NUM_PITS];
-        // Return true if all pits in the search range have 0 seeds, false otherwise
-        return pits.slice(start, end).find(pit => pit !== 0) == null;
+        const nonEmptyPitIndices = pits.reduce((arr, pitValue, pitIndex) => {
+            if (pitValue !== 0) return [...arr, pitIndex];
+            return arr;
+        }, []);
+        const validPitIndices = whoseTurn === 0 ?
+            nonEmptyPitIndices.filter(val => val < NUM_PITS / 2) :
+            nonEmptyPitIndices.filter(val => val >= NUM_PITS / 2);
+        const chosenPitIndex = validPitIndices[Math.floor(validPitIndices.length * Math.random())];
+        //console.log(`AI makes move at pit ${chosenPitIndex}`);
+        return makeMove(board, chosenPitIndex);
+    }
+    
+    export function isGameOver(board: Board): boolean {
+        const { pits } = board;
+        return pits.slice(0, NUM_PITS / 2).find(pit => pit !== 0) == null ||
+            pits.slice(NUM_PITS / 2).find(pit => pit !== 0) == null;
     }
 
     /** **Assuming that `board` is valid**, returns whether making a move at
      * `pit` would be valid.
      */
     export function validateMove(board: Board, pit: number): boolean {
+        if (isGameOver(board)) return false;
         if (!Number.isInteger(pit)) return false;
         const { whoseTurn, pits } = board;
         if (pits[pit] === 0) return false;
@@ -76,7 +114,7 @@ export namespace Mancala {
     }
 
     function numSpacesAway(pit1: number, pit2: number): number {
-        const sameSide = side(pit1) === side(pit2);
+        const sameSide = sideOf(pit1) === sideOf(pit2);
         if (!sameSide) {
             if (pit2 > pit1)
                 return pit2 - pit1 + 1;
@@ -89,7 +127,7 @@ export namespace Mancala {
         }
     }
     
-    function side(pit: number) { return Math.floor(pit / (NUM_PITS / 2)); }
+    function sideOf(pit: number) { return Math.floor(pit / (NUM_PITS / 2)); }
 }
 
 export {}
