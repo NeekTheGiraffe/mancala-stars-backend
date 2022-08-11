@@ -32,6 +32,7 @@ export interface ClientToServerEvents {
 
     "game:solo:start": () => void;
     "game:solo:makeMove": (pit: number) => void;
+    "game:solo:quit": () => void;
 
     "requestId": () => void;
 }

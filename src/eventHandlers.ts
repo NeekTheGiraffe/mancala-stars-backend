@@ -128,6 +128,9 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
         };
         setTimeout(() => doAiMove(), DELAY);
     };
+    const handleSoloQuit = () => {
+        delete socket.data.soloGame;
+    };
 
     socket.on('lobby:create', handleCreateLobby);
     socket.on('lobby:join', handleJoinLobby);
@@ -138,6 +141,7 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
     
     socket.on('game:solo:start', handleSoloStart);
     socket.on('game:solo:makeMove', handleSoloMove);
+    socket.on('game:solo:quit', handleSoloQuit);
 
     socket.on('disconnect', handleDisconnect);
 }
