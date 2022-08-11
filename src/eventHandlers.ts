@@ -27,8 +27,6 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
         
         if (!validate(socket, { lobby: { isNotAnyMember: true, exists: lobbyId, isNotFull: true }})) return;
 
-        console.log('validated');
-
         lobbies[lobbyId] = joinLobby(lobbies[lobbyId], socket.id);
         io.to(lobbyId).emit("lobby:update", lobbies[lobbyId]);
         
@@ -47,6 +45,11 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
 
         lobbies[lobbyId] = leaveLobby(lobbies[lobbyId], socket.id);
         io.to(lobbyId).emit("lobby:update", lobbies[lobbyId]);
+
+        if (games[lobbyId] == null) return;
+        delete games[lobbyId];
+
+        io.to(lobbyId).emit('game:end');
     };
     const handleDisconnect = () => {
         delete socket.data.soloGame;
@@ -68,7 +71,7 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
     
         if (!validate(socket, {
             lobby: { exists: true, isLeader: true, isFull: true },
-            game: { doesNotExist: true }
+            game: { isNotActive: true }
         })) return;
     
         const { lobbyId } = socket.data;
@@ -115,7 +118,7 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
         const DELAY = 1500;
         const doAiMove = () => {
             const { soloGame } = socket.data;
-            if (soloGame == null) { console.log('theyre a goner'); return; } // User disconnected!
+            if (soloGame == null) { console.log('User disconnected before AI could move'); return; }
             const newBoard = Mancala.makeRandomMove(soloGame);
 
             socket.data.soloGame = newBoard;
@@ -141,7 +144,7 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
 
 function validate(socket: MySocket, flags: {
     lobby: { exists?: string | true, isNotAnyMember?: true, isLeader?: true, isFull?: true, isNotFull?: true },
-    game?: { exists?: true, doesNotExist?: true, playerTurn?: true, pit?: number }
+    game?: { exists?: true, isNotActive?: true, playerTurn?: true, pit?: number }
 }): boolean
 {
     const { lobbyId } = socket.data;
@@ -154,7 +157,7 @@ function validate(socket: MySocket, flags: {
     if (flags.lobby.isNotFull && lobby.size === lobby.capacity) return false;
     if (flags.game) {
         const game = games[lobbyId];
-        if (flags.game.doesNotExist) return game == null;
+        if (flags.game.isNotActive) return game == null || Mancala.isGameOver(game.board);
         if (flags.game.exists && game == null) return false;
         if (flags.game.playerTurn && game.board.whoseTurn !== game.playerMap[socket.id]) return false;
         if (flags.game.pit != null && !Mancala.validateMove(game.board, flags.game.pit)) return false;
