@@ -62,11 +62,22 @@ export namespace Mancala {
             if (steal && (newPit === endingPit || newPit === stealFrom)) return 0;
             return pitValueBeforeStealing(oldValue, newPit);
         }
-    
-        return {
+        
+        const newBoard = {
             stores: stores.map(newStoreValue),
             pits: pits.map(newPitValue),
             whoseTurn: mayTakeAnotherTurn ? whoseTurn : (whoseTurn + 1) % 2
+        };
+        if (!isGameOver(newBoard)) return newBoard;
+        
+        // Game is over. Must pool all remaining seeds in the pits and
+        // place them into the stores.
+        const sum = (acc: number, cur: number) => acc + cur;
+        return {
+            stores: [newBoard.stores[0] + newBoard.pits.slice(0, NUM_PITS / 2).reduce(sum, 0),
+                newBoard.stores[1] + newBoard.pits.slice(NUM_PITS / 2).reduce(sum, 0)],
+            pits: Array(NUM_PITS).fill(0),
+            whoseTurn: newBoard.whoseTurn
         };
 
         /** Returns the pit index where we landed. If we landed on the player's

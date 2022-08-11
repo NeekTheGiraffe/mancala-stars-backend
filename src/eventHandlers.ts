@@ -105,10 +105,12 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
 
         if (!Mancala.validateMove(board, pit)) {console.log('shit move'); return; }
         const afterPlayerMove = Mancala.makeMove(board, pit);
+        
         socket.data.soloGame = afterPlayerMove;
-        socket.emit('game:solo:update', afterPlayerMove, Mancala.isGameOver(afterPlayerMove));
+        const isGameOver = Mancala.isGameOver(afterPlayerMove);
+        socket.emit('game:solo:update', afterPlayerMove, isGameOver);
 
-        if (afterPlayerMove.whoseTurn === 0 || Mancala.isGameOver(afterPlayerMove)) return;
+        if (afterPlayerMove.whoseTurn === 0 || isGameOver) return;
 
         const DELAY = 1500;
         const doAiMove = () => {
@@ -117,8 +119,9 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
             const newBoard = Mancala.makeRandomMove(soloGame);
 
             socket.data.soloGame = newBoard;
-            socket.emit('game:solo:update', newBoard, Mancala.isGameOver(newBoard));
-            if (newBoard.whoseTurn === 1) setTimeout(() => doAiMove(), DELAY);
+            const gmOver = Mancala.isGameOver(newBoard);
+            socket.emit('game:solo:update', newBoard, gmOver);
+            if (newBoard.whoseTurn === 1 && !gmOver) setTimeout(() => doAiMove(), DELAY);
         };
         setTimeout(() => doAiMove(), DELAY);
     };
