@@ -52,8 +52,15 @@ npm start
 
 ## Future directions
 
+### Backend
 * Improve the "AI" (currently just randomly chooses a move)
 * Flesh out the lobby system and create public lobbies
-* Embed the AI in the frontend code to play against them without Internet
+* Standardize and improve server-side logging
+
+### Frontend
 * Include lobby codes as links themselves, allowing users to just follow links instead of manually copying and pasting codes
+
+### Both
+* Embed the AI in the frontend code to play against them without Internet
 * Include more social features such as a live chat
+* Improve error messaging when the frontend is not connected to the Internet or passes an illegal command to the backend
