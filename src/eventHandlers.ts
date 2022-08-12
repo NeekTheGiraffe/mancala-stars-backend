@@ -25,6 +25,7 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
 
         console.log(`${socket.id}: wants to join a Lobby`);
         
+        if (typeof lobbyId !== 'string') return;
         if (!validate(socket, { lobby: { isNotAnyMember: true, exists: lobbyId, isNotFull: true }})) return;
 
         lobbies[lobbyId] = joinLobby(lobbies[lobbyId], socket.id);
@@ -82,6 +83,7 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
     };
     const handleMakeMove = (pit: number) => {
 
+        if (typeof pit !== 'number') return;
         if (!validate(socket, {
             lobby: { exists: true },
             game: { exists: true, playerTurn: true, pit }
@@ -104,6 +106,8 @@ export function registerLobbyHandlers(socket: MySocket, io: MyServer) {
         socket.emit('game:solo:start', board);
     };
     const handleSoloMove = (pit: number) => {
+        if (typeof pit !== 'number') return;
+
         const { soloGame: board } = socket.data;
 
         if (!Mancala.validateMove(board, pit)) {console.log('shit move'); return; }
